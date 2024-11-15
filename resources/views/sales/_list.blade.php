@@ -1,6 +1,6 @@
 <div class="flex justify-center min-h-screen">
     <!-- Contenedor de filtros a la izquierda -->
-    <div class="w-1/4 p-4">
+    <div class="w-1/8 p-4">
         <div class="bg-white p-10 rounded-md mb-4">
             <h2 class="text-lg font-semibold">Filter Sales</h2>
             <form action="{{ route('sales.list') }}" method="GET">
@@ -55,15 +55,16 @@
     </div>
 
     <!-- Contenedor de la tabla de ventas centrada en la pantalla -->
-    <div class="w-3/4 p-4">
+    <div class="w-7/8 p-4">
             <a href="{{ route('sales.add') }}" class="text-white bg-blue-700 hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 font-medium rounded-full text-sm px-5 py-2.5 text-center mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
                 Add New Sale
             </a> <br><br>
         <div class="overflow-x-auto md:h-auto shadow-md sm:rounded-lg">
-            <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+            <table class="w-full min-w[1024px] text-sm text-left text-gray-500 dark:text-gray-400">
                 <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                     <tr>
                         <th scope="col" class="px-6 py-3">Sub agent</th>
+                        <th scope="col" class="px-6 py-3">Email</th>
                         <th scope="col" class="px-9 py-3">Amount</th>
                         <th scope="col" class="px-6 py-3">Product</th>
                         <th scope="col" class="px-6 py-3">Company</th>
@@ -80,20 +81,23 @@
                             <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                 {{ $sale->user->name }}
                             </th>
-                            <th scope="row" class="px-9 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                {{ $sale->user->email }}
+                            </td>
+                            <td class="px-9 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                 {{ '$ ' . number_format($sale->amount) }} USD
-                            </th>
-                            <th scope="row" class="px-9 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                            </td>
+                            <td class="px-9 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                 {{ $sale->product->name }}
-                            </th>
-                            <th scope="row" class="px-9 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                            </td>
+                            <td class="px-9 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                 {{ $sale->company->name }}
-                            </th>
-                            <th scope="row" class="px-9 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                            </td>
+                            <td class="px-9 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                 {{ \Carbon\Carbon::parse($sale->date)->format('F d, Y') }}
-                            </th>
+                            </td>
                             @hasrole('Admin')
-                                <td class="px-6 py-4">
+                                <td class="px-6 py-4" style="min-width: 100px;">
                                     <a href="{{ route('sales.edit', $sale->id) }}" class="text-blue-500 hover:text-blue-600 font-medium">
                                         Edit
                                     </a>

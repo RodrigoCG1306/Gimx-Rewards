@@ -33,7 +33,7 @@ class SalesController extends Controller
         
         $awards = Award::all();
 
-        $query = Sales::query();
+        $query = Sales::With('user');
 
         if ($user_id) {
             $query->where('user_id', $user_id);
