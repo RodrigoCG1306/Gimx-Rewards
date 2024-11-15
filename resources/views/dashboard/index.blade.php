@@ -85,7 +85,7 @@
     @endif
 
     @if ($monthlyChart)
-        <script src="{{ $monthlyChart->cdn() }}"></script>
+        <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.54.1"></script>
         {{ $monthlyChart->script() }}
     @endif
 
