@@ -41,6 +41,7 @@ class RoleSeeder extends Seeder
 
         //Sub agente
         Permission::create(['name' => 'Individual_dashboard'])->syncRoles([$agent, $admin, $subAgent]);
+        Permission::create(['name' => 'Individual_add'])->syncRoles([$agent, $admin, $subAgent]);
         Permission::create(['name' => 'Individual_sales'])->syncRoles([$agent, $admin, $subAgent]);
         Permission::create(['name' => 'Prizes_list'])->syncRoles([$agent, $admin, $subAgent]);
         Permission::create(['name' => 'Sales_graphic'])->syncRoles([$agent, $admin, $subAgent]);

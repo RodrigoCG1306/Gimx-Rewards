@@ -12,6 +12,8 @@ use App\Models\Sales;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
 
 class SalesController extends Controller
@@ -33,7 +35,7 @@ class SalesController extends Controller
         
         $awards = Award::all();
 
-        $query = Sales::With('user');
+        $query = Sales::query();
 
         if ($user_id) {
             $query->where('user_id', $user_id);
@@ -60,12 +62,66 @@ class SalesController extends Controller
         return view('sales.list', compact('sales', 'users', 'products', 'companies', 'awards', 'user_id', 'product_id', 'company_id', 'award_id', 'current_season_id'));
     }
         
-    public function add()
+    public function upload()
     {
-        return view('sales.add', [
+        return view('sales.upload', [
             'sales' => new Sales,
         ]);
     }
+    public function add()
+    {
+        // Obtener la fecha actual
+        $today = \Carbon\Carbon::today();
+        
+        // Obtener la temporada actual basada en la fecha
+        $currentSeason = Award::where('start', '<=', $today)
+                              ->where('end', '>=', $today)
+                              ->first();
+    
+        // Si no se encuentra una temporada activa, asignar null para mostrar mensaje o lógica alternativa en la vista
+        $currentSeasonName = $currentSeason ? $currentSeason->name : 'No active season';
+        $currentSeasonId = $currentSeason ? $currentSeason->id : null;
+    
+        // Obtener los datos necesarios para el formulario
+        $users = User::all();
+        $products = Product::all();
+        $companies = Company::all();
+        $awards = Award::all();
+    
+        // Pasar los datos a la vista
+        return view('sales.add', compact('users', 'products', 'companies', 'awards', 'currentSeasonName', 'currentSeasonId'));
+    }
+    
+
+    public function store(Request $request)
+    {
+        // Validación de los datos
+        $validator = Validator::make($request->all(), [
+            'product_id' => 'required|exists:products,id',
+            'company_id' => 'required|exists:companies,id',
+            'award_id' => 'required|exists:awards,id',
+            'amount' => 'required|numeric',
+            'email' => 'required|email|in:' . Auth::user()->email,  // Asegura que el email es el del usuario autenticado
+        ]);
+    
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+    
+        // Crear la venta si la validación pasa
+        $sale = Sales::create([
+            'user_id' => Auth::id(),  // ID del usuario autenticado
+            'product_id' => $request->product_id,
+            'company_id' => $request->company_id,
+            'award_id' => $request->award_id,
+            'amount' => $request->amount,
+            'email' => Auth::user()->email,  // Usamos el email del usuario autenticado
+            'date' => now(),  // Fecha actual
+        ]);
+    
+        return redirect()->route('dashboard.subagents')->with('success', 'Data imported correctly!');
+    }
+    
 
     public function import(Request $request)
     {

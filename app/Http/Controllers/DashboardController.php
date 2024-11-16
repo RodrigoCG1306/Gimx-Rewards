@@ -40,31 +40,30 @@ class DashboardController extends Controller
         return $this->subAgents($agentProductSalesChart, $agentMonthlySales, $lastUpdate, $seasons, $selectedSeasonId);
     }
 
-    public function subAgents(AgentProductSalesChart $agentProductSalesChart, AgentMonthlySalesChart $agentMonthlySalesChart, $lastUpdate)
-    {
+    public function subAgents(AgentProductSalesChart $agentProductSalesChart, AgentMonthlySalesChart $agentMonthlySalesChart, $lastUpdate, $seasons = null, $selectedSeasonId = null) {
         $user = Auth::user();        
-
+    
         $userSales = $user->sales()->get();
-
+    
         if ($userSales->isEmpty()) {
-            // Si el usuario no tiene datos de venta, mostrar el mensaje y devolver la vista
             return $this->subAgentView([
-                'agentProductSales' => $agentProductSalesChart->build(), // Asegúrate de pasar el chart correctamente
-                'agentMonthlySales' => $agentMonthlySalesChart->build(), // Asegúrate de pasar el chart correctamente
+                'agentProductSales'  => $agentProductSalesChart->build(),
+                'agentMonthlySales'  => $agentMonthlySalesChart->build(),
                 'progressPercentage' => 0,
                 'totalSales'         => 0,
-                'usersWithSales'     => collect(), // Pasamos una colección vacía para evitar el error en la vista
+                'usersWithSales'     => collect(),
                 'remainingSales'     => 0,
                 'lastUpdate'         => $lastUpdate,
+                'seasons'            => $seasons,
+                'selectedSeasonId'   => $selectedSeasonId,
             ]);
         }
-
-        // Si el usuario tiene datos de venta, continuar como antes
+    
         $totalSales = $userSales->sum('amount');
         $goal = 80000;
         $progressPercentage = min(100, ($totalSales / $goal) * 100);
         $remainingSales = max(0, $goal - $totalSales);
-
+    
         return $this->subAgentView([
             'agentProductSales'  => $agentProductSalesChart->build(),
             'agentMonthlySales'  => $agentMonthlySalesChart->build(),
@@ -73,6 +72,8 @@ class DashboardController extends Controller
             'usersWithSales'     => $userSales,
             'remainingSales'     => $remainingSales,
             'lastUpdate'         => $lastUpdate,
+            'seasons'            => $seasons,
+            'selectedSeasonId'   => $selectedSeasonId,
         ]);
     }
 

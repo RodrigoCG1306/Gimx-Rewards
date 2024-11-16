@@ -37,13 +37,15 @@ Route::prefix('awards')->name('awards.')->group(function() {
     Route::put('/{id}/update', [AwardController::class, 'update'])->name('update');
 });
 
-Route::middleware('can:Sales_adding')->prefix('sales')->name('sales.')->group(function () {
-    Route::get('/', [SalesController::class, 'list'])->name('list');
-    Route::get('/add', [SalesController::class, 'add'])->name('add');
-    Route::post('/import', [SalesController::class, 'import'])->name('import');
+Route::prefix('sales')->name('sales.')->group(function () {
+    Route::middleware('can:Sales_adding')->get('/', [SalesController::class, 'list'])->name('list');
+    Route::middleware('can:Sales_adding')->get('/upload', [SalesController::class, 'upload'])->name('upload');
+    Route::middleware('can:Individual_add')->get('/add', [SalesController::class, 'add'])->name('add');
+    Route::middleware('can:Individual_add')->post('/store', [SalesController::class, 'store'])->name('store');
+    Route::middleware('can:Sales_adding')->post('/import', [SalesController::class, 'import'])->name('import');
     Route::middleware('can:Sales_managment')->get('/{id}/edit', [SalesController::class, 'edit'])->name('edit');
-    Route::put('/{id}/update', [SalesController::class, 'update'])->name('update');
-    Route::get('/export', [SalesController::class, 'export'])->name('download');
+    Route::middleware('can:Sales_adding')->put('/{id}/update', [SalesController::class, 'update'])->name('update');
+    Route::middleware('can:Sales_adding')->get('/export', [SalesController::class, 'export'])->name('download');
 });
 
 Route::middleware('can:User_adding')->prefix('agents')->name('agents.')->group(function () {
