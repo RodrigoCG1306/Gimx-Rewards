@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\Shared\Date;
 
 class SalesController extends Controller
 {
@@ -123,44 +124,112 @@ class SalesController extends Controller
     }
     
 
-    public function import(Request $request)
-    {
-        // Check if a file has been sent
-        if (!$request->hasFile('file')) {
-            return redirect()->back()->with('error', 'You must select a file to import.');
+    use \PhpOffice\PhpSpreadsheet\Shared\Date;
+
+public function import(Request $request)
+{
+    // Verificar si se ha enviado un archivo
+    if (!$request->hasFile('file')) {
+        return redirect()->back()->with('error', 'Debe seleccionar un archivo para importar.');
+    }
+
+    // Obtener el archivo cargado
+    $file = $request->file('file');
+
+    // Verificar si el archivo es válido
+    if (!$file->isValid()) {
+        return redirect()->back()->with('error', 'El archivo seleccionado no es válido.');
+    }
+
+    // Cargar los datos del archivo Excel
+    $excelData = Excel::toArray([], $file);
+
+    // Obtener el encabezado de la primera fila del archivo Excel
+    $header = $excelData[0][0];
+
+    // Definir los nombres de columna esperados
+    $expectedColumns = ["date", "agent", "email", "amount", "product", "company", "award"];
+
+    // Verificar si el encabezado contiene todas las columnas requeridas
+    foreach ($expectedColumns as $column) {
+        if (!in_array(strtolower($column), array_map('strtolower', $header))) {
+            return redirect()->back()->with('error', 'El archivo no contiene la columna ' . $column . '.');
         }
-    
-        // Get the uploaded file from the request
-        $file = $request->file('file');
-    
-        // Check if the file is valid (optional, depending on your needs)
-        if (!$file->isValid()) {
-            return redirect()->back()->with('error', 'The selected file is not valid.');
-        }
-    
-        // Load the Excel file into an array
-        $excelData = Excel::toArray([], $file);
-    
-        // Get the header from the first row of the Excel data
-        $header = $excelData[0][0];
-    
-        // Define the expected column names
-        $expectedColumns = ["date", "agent", "amount", "product", "company", "award"];
-    
-        // Verify if the header contains all the required columns
-        foreach ($expectedColumns as $column) {
-            if (!in_array(strtolower($column), array_map('strtolower', $header))) {
-                // If any required column is missing, redirect back with an error message
-                return redirect()->back()->with('error', 'The file does not contain the column ' . $column . '.');
+    }
+
+    // Obtener los datos del archivo Excel (ignoramos el encabezado)
+    $excelRows = array_slice($excelData[0], 1);
+
+    // Comparar los datos del Excel con la base de datos
+    $comparisonResults = [];
+    foreach ($excelRows as $row) {
+        // Aquí asumimos que el archivo Excel contiene las columnas: date, agent, email, amount, product, company, award
+        $saleData = [
+            'date' => Date::excelToDateTimeObject($row[0])->format('Y-m-d'),  // Convertimos la fecha de Excel a formato Y-m-d
+            'agent' => $row[1],
+            'email' => $row[2],
+            'amount' => $row[3],
+            'product' => $row[4],
+            'company' => $row[5],
+            'award' => $row[6],
+        ];
+
+        // Buscar si existe una venta con estos datos
+        $existingSale = Sales::whereDate('date', $saleData['date']) // Asegúrate de usar 'whereDate' para comparar solo la fecha
+                            ->where('amount', $saleData['amount'])
+                            ->whereHas('product', function ($query) use ($saleData) {
+                                $query->where('name', $saleData['product']);
+                            })
+                            ->whereHas('company', function ($query) use ($saleData) {
+                                $query->where('name', $saleData['company']);
+                            })
+                            ->whereHas('award', function ($query) use ($saleData) {
+                                $query->where('name', $saleData['award']);
+                            })
+                            ->whereHas('agent', function ($query) use ($saleData) {
+                                $query->where('email', $saleData['email']); // Filtramos por el email del agente
+                            })
+                            ->first();
+
+        if ($existingSale) {
+            // Si encontramos la venta, actualizamos los campos que han cambiado
+            $existingSale->update([
+                'amount' => $saleData['amount'],
+                'product' => $saleData['product'],
+                'company' => $saleData['company'],
+                'award' => $saleData['award'],
+            ]);
+
+            $comparisonResults[] = [
+                'status' => 'updated',
+                'excel' => $saleData,
+                'db' => $existingSale->toArray(),
+            ];
+        } else {
+            // Si no se encuentra la venta, creamos una nueva
+            $user = User::where('email', $saleData['email'])->first(); // Obtener el usuario por su email
+            if ($user) {
+                $saleData['user_id'] = $user->id; // Asignamos el ID del usuario al campo 'user_id'
+                Sales::create($saleData);
+                $comparisonResults[] = [
+                    'status' => 'new',
+                    'excel' => $saleData,
+                    'db' => null,
+                ];
+            } else {
+                $comparisonResults[] = [
+                    'status' => 'no_user',
+                    'excel' => $saleData,
+                    'db' => null,
+                ];
             }
         }
-    
-        // Perform the import only if everything is in order
-        Excel::import(new SalesImport, $file);
-    
-        // Redirect to the '/sales' route with a success message
-        return redirect('/sales')->with('success', 'Data imported correctly!');
     }
+
+    // Pasar los resultados de la comparación a la vista
+    return view('sales.comparison', compact('comparisonResults'));
+}
+
 
     public function edit($id)
     {

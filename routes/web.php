@@ -43,6 +43,7 @@ Route::prefix('sales')->name('sales.')->group(function () {
     Route::middleware('can:Individual_add')->get('/add', [SalesController::class, 'add'])->name('add');
     Route::middleware('can:Individual_add')->post('/store', [SalesController::class, 'store'])->name('store');
     Route::middleware('can:Sales_adding')->post('/import', [SalesController::class, 'import'])->name('import');
+    Route::middleware('can:Sales_adding')->post('/correct', [SalesController::class, 'correctSalesData'])->name('correct');
     Route::middleware('can:Sales_managment')->get('/{id}/edit', [SalesController::class, 'edit'])->name('edit');
     Route::middleware('can:Sales_adding')->put('/{id}/update', [SalesController::class, 'update'])->name('update');
     Route::middleware('can:Sales_adding')->get('/export', [SalesController::class, 'export'])->name('download');

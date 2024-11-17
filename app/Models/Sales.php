@@ -20,10 +20,10 @@ class Sales extends Model
         'award_id'
     ];
 
-    public function user()
+    public function agent()
     {
-        return $this->belongsTo(User::class);
-    }
+        return $this->belongsTo(User::class, 'user_id'); // Relación con el modelo User usando el campo 'user_id'
+    }    
 
     public function product()
     {
