@@ -19,256 +19,294 @@ use PhpOffice\PhpSpreadsheet\Shared\Date;
 
 class SalesController extends Controller
 {
-    const SALES_PAGINATE = 10; // Puedes ajustar el número de ventas por página según tus necesidades.
+    const SALES_PAGINATE = 10;
+    const EXPECTED_COLUMNS = ["date", "agent", "email", "amount", "product", "company", "award"];
 
+    /**
+     * Lista las ventas con filtros opcionales.
+     */
     public function list(Request $request)
     {
         $user_id = $request->input('user_id');
         $product_id = $request->input('product_id');
         $company_id = $request->input('company_id');
         $award_id = $request->input('award_id');
-
+    
         $today = Carbon::today();
         $currentSeason = Award::where('start', '<=', $today)
                             ->where('end', '>=', $today)
                             ->first();
         $current_season_id = $currentSeason ? $currentSeason->id : null;
-        
+    
         $awards = Award::all();
-
+    
         $query = Sales::query();
-
+    
         if ($user_id) {
             $query->where('user_id', $user_id);
         }
-
+    
         if ($product_id) {
             $query->where('product_id', $product_id);
         }
-
+    
         if ($company_id) {
             $query->where('company_id', $company_id);
         }
-
+    
         if ($award_id) {
             $query->where('award_id', $award_id);
         }
-
-        $sales = $query->orderBy('date', 'desc')->paginate(self::SALES_PAGINATE);
-
+    
+        $sales = $query->with(['agent', 'product', 'company', 'award'])
+                       ->whereHas('agent', function ($q) {
+                           $q->whereNotNull('email');
+                       })
+                       ->orderBy('date', 'desc')
+                       ->paginate(self::SALES_PAGINATE);
+    
         $users = User::all();
         $products = Product::all();
         $companies = Company::all();
-
+    
         return view('sales.list', compact('sales', 'users', 'products', 'companies', 'awards', 'user_id', 'product_id', 'company_id', 'award_id', 'current_season_id'));
     }
-        
+
+    /**
+     * Muestra el formulario para subir un archivo.
+     */
     public function upload()
     {
-        return view('sales.upload', [
-            'sales' => new Sales,
-        ]);
+        return view('sales.upload');
     }
+
+    /**
+     * Muestra el formulario para añadir una venta.
+     */
     public function add()
     {
-        // Obtener la fecha actual
-        $today = \Carbon\Carbon::today();
-        
-        // Obtener la temporada actual basada en la fecha
-        $currentSeason = Award::where('start', '<=', $today)
-                              ->where('end', '>=', $today)
-                              ->first();
-    
-        // Si no se encuentra una temporada activa, asignar null para mostrar mensaje o lógica alternativa en la vista
-        $currentSeasonName = $currentSeason ? $currentSeason->name : 'No active season';
-        $currentSeasonId = $currentSeason ? $currentSeason->id : null;
-    
-        // Obtener los datos necesarios para el formulario
-        $users = User::all();
-        $products = Product::all();
-        $companies = Company::all();
-        $awards = Award::all();
-    
-        // Pasar los datos a la vista
-        return view('sales.add', compact('users', 'products', 'companies', 'awards', 'currentSeasonName', 'currentSeasonId'));
+        return view('sales.add', [
+            'users' => User::all(),
+            'products' => Product::all(),
+            'companies' => Company::all(),
+            'awards' => Award::all(),
+            'currentSeasonName' => $this->getCurrentSeasonName(),
+            'currentSeasonId' => $this->getCurrentSeasonId(),
+        ]);
     }
-    
 
+    /**
+     * Almacena una nueva venta.
+     */
     public function store(Request $request)
     {
-        // Validación de los datos
         $validator = Validator::make($request->all(), [
             'product_id' => 'required|exists:products,id',
             'company_id' => 'required|exists:companies,id',
             'award_id' => 'required|exists:awards,id',
             'amount' => 'required|numeric',
-            'email' => 'required|email|in:' . Auth::user()->email,  // Asegura que el email es el del usuario autenticado
+            'email' => 'required|email|in:' . Auth::user()->email,
         ]);
-    
+
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
-    
-        // Crear la venta si la validación pasa
-        $sale = Sales::create([
-            'user_id' => Auth::id(),  // ID del usuario autenticado
+
+        Sales::create([
+            'user_id' => Auth::id(),
             'product_id' => $request->product_id,
             'company_id' => $request->company_id,
             'award_id' => $request->award_id,
             'amount' => $request->amount,
-            'email' => Auth::user()->email,  // Usamos el email del usuario autenticado
-            'date' => now(),  // Fecha actual
+            'email' => Auth::user()->email,
+            'date' => now(),
         ]);
-    
+
         return redirect()->route('dashboard.subagents')->with('success', 'Data imported correctly!');
     }
-    
 
-    use \PhpOffice\PhpSpreadsheet\Shared\Date;
-
-public function import(Request $request)
-{
-    // Verificar si se ha enviado un archivo
-    if (!$request->hasFile('file')) {
-        return redirect()->back()->with('error', 'Debe seleccionar un archivo para importar.');
-    }
-
-    // Obtener el archivo cargado
-    $file = $request->file('file');
-
-    // Verificar si el archivo es válido
-    if (!$file->isValid()) {
-        return redirect()->back()->with('error', 'El archivo seleccionado no es válido.');
-    }
-
-    // Cargar los datos del archivo Excel
-    $excelData = Excel::toArray([], $file);
-
-    // Obtener el encabezado de la primera fila del archivo Excel
-    $header = $excelData[0][0];
-
-    // Definir los nombres de columna esperados
-    $expectedColumns = ["date", "agent", "email", "amount", "product", "company", "award"];
-
-    // Verificar si el encabezado contiene todas las columnas requeridas
-    foreach ($expectedColumns as $column) {
-        if (!in_array(strtolower($column), array_map('strtolower', $header))) {
-            return redirect()->back()->with('error', 'El archivo no contiene la columna ' . $column . '.');
+    /**
+     * Importa ventas desde un archivo Excel.
+     */
+    public function import(Request $request)
+    {
+        if (!$request->hasFile('file') || !$request->file('file')->isValid()) {
+            return redirect()->back()->with('error', 'Debe seleccionar un archivo válido para importar.');
         }
-    }
 
-    // Obtener los datos del archivo Excel (ignoramos el encabezado)
-    $excelRows = array_slice($excelData[0], 1);
+        $file = $request->file('file');
 
-    // Comparar los datos del Excel con la base de datos
-    $comparisonResults = [];
-    foreach ($excelRows as $row) {
-        // Aquí asumimos que el archivo Excel contiene las columnas: date, agent, email, amount, product, company, award
-        $saleData = [
-            'date' => Date::excelToDateTimeObject($row[0])->format('Y-m-d'),  // Convertimos la fecha de Excel a formato Y-m-d
-            'agent' => $row[1],
-            'email' => $row[2],
-            'amount' => $row[3],
-            'product' => $row[4],
-            'company' => $row[5],
-            'award' => $row[6],
-        ];
+        try {
+            $excelData = $this->parseExcelFile($file);
+            $results = $this->compareAndUpdateSales($excelData);
 
-        // Buscar si existe una venta con estos datos
-        $existingSale = Sales::whereDate('date', $saleData['date']) // Asegúrate de usar 'whereDate' para comparar solo la fecha
-                            ->where('amount', $saleData['amount'])
-                            ->whereHas('product', function ($query) use ($saleData) {
-                                $query->where('name', $saleData['product']);
-                            })
-                            ->whereHas('company', function ($query) use ($saleData) {
-                                $query->where('name', $saleData['company']);
-                            })
-                            ->whereHas('award', function ($query) use ($saleData) {
-                                $query->where('name', $saleData['award']);
-                            })
-                            ->whereHas('agent', function ($query) use ($saleData) {
-                                $query->where('email', $saleData['email']); // Filtramos por el email del agente
-                            })
-                            ->first();
+            // Iterar sobre los resultados para obtener los nombres
+            foreach ($results as &$result) {
+                // Obtener nombre del usuario (suponiendo que 'user_id' está en el array 'data')
+                $user = User::find($result['data']['user_id']);
+                $result['data']['user_name'] = $user->name;
 
-        if ($existingSale) {
-            // Si encontramos la venta, actualizamos los campos que han cambiado
-            $existingSale->update([
-                'amount' => $saleData['amount'],
-                'product' => $saleData['product'],
-                'company' => $saleData['company'],
-                'award' => $saleData['award'],
-            ]);
+                // Obtener nombre del producto (suponiendo que 'product_id' está en el array 'data')
+                $product = Product::find($result['data']['product_id']);
+                $result['data']['product_name'] = $product->name;
 
-            $comparisonResults[] = [
-                'status' => 'updated',
-                'excel' => $saleData,
-                'db' => $existingSale->toArray(),
-            ];
-        } else {
-            // Si no se encuentra la venta, creamos una nueva
-            $user = User::where('email', $saleData['email'])->first(); // Obtener el usuario por su email
-            if ($user) {
-                $saleData['user_id'] = $user->id; // Asignamos el ID del usuario al campo 'user_id'
-                Sales::create($saleData);
-                $comparisonResults[] = [
-                    'status' => 'new',
-                    'excel' => $saleData,
-                    'db' => null,
-                ];
-            } else {
-                $comparisonResults[] = [
-                    'status' => 'no_user',
-                    'excel' => $saleData,
-                    'db' => null,
-                ];
+                // Obtener nombre de la compañía (suponiendo que 'company_id' está en el array 'data')
+                $company = Company::find($result['data']['company_id']);
+                $result['data']['company_name'] = $company->name;
+
+                // Obtener nombre del premio (suponiendo que 'award_id' está en el array 'data')
+                $award = Award::find($result['data']['award_id']);
+                $result['data']['award_name'] = $award->name;
             }
+
+            return view('sales.comparison', compact('results'));
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Ocurrió un error: ' . $e->getMessage());
         }
     }
 
-    // Pasar los resultados de la comparación a la vista
-    return view('sales.comparison', compact('comparisonResults'));
-}
-
-
+    /**
+     * Edita una venta existente.
+     */
     public function edit($id)
     {
-        $sale = Sales::find($id);
-        $users = User::all();
-        $companies = Company::all();
-        $products = Product::all();
-        $awards = Award::all();
-        return view('sales.edit', compact('sale', 'users', 'companies', 'products', 'awards'));
+        return view('sales.edit', [
+            'sale' => Sales::findOrFail($id),
+            'users' => User::pluck('name', 'id'),
+            'companies' => Company::pluck('name', 'id'),
+            'products' => Product::pluck('name', 'id'),
+            'awards' => Award::pluck('name', 'id'),
+        ]);
     }
 
+    /**
+     * Actualiza una venta existente.
+     */
     public function update($id, UpdateSalesRequest $request)
     {
-        $sale = Sales::find($id);
-      //  dd($request->all());
-        $sale->user_id = $request->input('user');
-
-        $sale->product_id = $request->input('product');
-
-        $sale->company_id = $request->input('company');
-
-        $sale->award_id = $request->input('award');
-
-        if ($request->filled('amount')) {
-            $sale->amount = $request->input('amount');
-        }
-
-        if ($request->filled('date')) {
-            $sale->date = $request->input('date');
-        }
-
-        $sale->save();
+        $sale = Sales::findOrFail($id);
+        $sale->fill($request->validated())->save();
 
         return redirect()->route('sales.list')->with('success', 'Sale updated successfully.');
     }
 
+    /**
+     * Exporta una plantilla de ventas.
+     */
     public function export()
     {
         return Excel::download(new SalesTemplate, 'sales.xlsx');
     }
 
+    private function getCurrentSeasonName()
+    {
+        $season = $this->getCurrentSeason();
+        return $season ? $season->name : 'No active season';
+    }
+
+    private function getCurrentSeasonId()
+    {
+        $season = $this->getCurrentSeason();
+        return $season ? $season->id : null;
+    }
+
+    private function getCurrentSeason()
+    {
+        $today = Carbon::today();
+        return Award::where('start', '<=', $today)->where('end', '>=', $today)->first();
+    }
+
+    private function parseExcelFile($file)
+    {
+        $data = Excel::toArray([], $file)[0];
+
+        if (empty($data) || !$this->validateExcelHeader($data[0])) {
+            throw new \Exception('El archivo no contiene el formato esperado.');
+        }
+
+        return array_slice($data, 1);
+    }
+
+    private function validateExcelHeader($header)
+    {
+        return !array_diff(self::EXPECTED_COLUMNS, array_map('strtolower', $header));
+    }
+
+    private function compareAndUpdateSales(array $excelRows)
+    {
+        $results = [];
+        foreach ($excelRows as $row) {
+            $saleData = $this->mapRowToSaleData($row);
+            // Verificar que el email coincida con el del usuario en la base de datos
+            if ($saleData['email'] !== User::find($saleData['user_id'])->email) {
+                throw new \Exception("El email de la venta no coincide con el del agente.");
+            }
+    
+            // Buscar la venta existente
+            $existingSale = $this->findMatchingSale($saleData);
+    
+            if ($existingSale) {
+                $existingSale->update($saleData);
+                $results[] = ['status' => 'updated', 'data' => $saleData];
+            } else {
+                Sales::create($saleData);
+                $results[] = ['status' => 'new', 'data' => $saleData];
+            }
+        }
+    
+        return $results;
+    }
+    
+
+    private function mapRowToSaleData($row)
+    {
+        // Buscar al usuario por el nombre del agente
+        $user = User::where('name', $row[1])->first();
+        $product = Product::where('name', $row[4])->first();
+        $company = Company::where('name', $row[5])->first();
+        $award = Award::where('name', $row[6])->first();
+
+        // Verificar que todos los registros existan
+        if (!$user) {
+            throw new \Exception("The agent '{$row[1]}' isn't in the database.");
+        }
+
+        if (!$product) {
+            throw new \Exception("The product '{$row[4]}' isn't in the database.");
+        }
+
+        if (!$company) {
+            throw new \Exception("The company '{$row[5]}' isn't in the database.");
+        }
+
+        if (!$award) {
+            throw new \Exception("The award '{$row[6]}' isn't in the database.");
+        }
+
+        // Obtener el email del usuario correspondiente
+        $email = $user->email;  // Usamos el email del usuario encontrado
+
+        return [
+            'user_id' => $user->id, // ID del usuario
+            'date' => Date::excelToDateTimeObject($row[0])->format('Y-m-d'),
+            'email' => $email,     // Email del agente
+            'amount' => $row[3],    // Cantidad
+            'product_id' => $product->id, // ID del producto
+            'company_id' => $company->id, // ID de la compañía
+            'award_id' => $award->id,     // ID del premio
+            'user_name' => $user->name,
+        ];
+    }
+
+    private function findMatchingSale($data)
+    {
+        return Sales::whereDate('date', $data['date'])
+            ->where('amount', $data['amount'])
+            ->where('product_id', $data['product_id'])
+            ->where('company_id', $data['company_id'])
+            ->where('award_id', $data['award_id'])
+            ->whereHas('agent', fn($q) => $q->where('email', $data['email']))
+            ->first();
+    }
 }

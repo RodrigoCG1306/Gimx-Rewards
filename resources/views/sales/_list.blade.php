@@ -1,6 +1,6 @@
 <div class="flex justify-center min-h-screen">
     <!-- Contenedor de filtros a la izquierda -->
-    <div class="w-1/8 p-4">
+    <div class="w-1/4 p-4">
         <div class="bg-white p-10 rounded-md mb-4">
             <h2 class="text-lg font-semibold">Filter Sales</h2>
             <form action="{{ route('sales.list') }}" method="GET">
@@ -55,16 +55,13 @@
     </div>
 
     <!-- Contenedor de la tabla de ventas centrada en la pantalla -->
-    <div class="w-7/8 p-4">
-        @hasrole('Admin')
+    <div class="w-3/4 p-4">
             <a href="{{ route('sales.upload') }}" class="text-white bg-blue-700 hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 font-medium rounded-full text-sm px-5 py-2.5 text-center mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
                 Upload Excel
-            </a> 
-        @endhasrole
-            <br><br>
-        <div class="overflow-x-auto md:h-auto shadow-md sm:rounded-lg">
-            <table class="w-full min-w[1024px] text-sm text-left text-gray-500 dark:text-gray-400">
-                <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+            </a> <br><br>
+        <div class="shadow-md rounded-lg bg-white dark:bg-gray-800">
+            <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400 rounded-lg">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 ">
                     <tr>
                         <th scope="col" class="px-6 py-3">Sub agent</th>
                         <th scope="col" class="px-6 py-3">Email</th>
@@ -82,19 +79,19 @@
                     @foreach ($sales as $sale)
                         <tr class="bg-white border-b dark:bg-gray-900 dark:border-gray-700">
                             <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                {{ $sale->user->name }}
+                                {{ $sale->agent->name ?? 'No Name' }}
                             </th>
                             <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                {{ $sale->user->email }}
+                                {{ $sale->agent->email ?? 'No Email' }}
                             </td>
                             <td class="px-9 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                 {{ '$ ' . number_format($sale->amount) }} USD
                             </td>
                             <td class="px-9 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                {{ $sale->product->name }}
+                                {{ $sale->product->name ?? 'No Product' }}
                             </td>
                             <td class="px-9 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                {{ $sale->company->name }}
+                                {{ $sale->company->name ?? 'No Company' }}
                             </td>
                             <td class="px-9 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                 {{ \Carbon\Carbon::parse($sale->date)->format('F d, Y') }}
@@ -109,6 +106,7 @@
                         </tr>
                     @endforeach
                 </tbody>
+                
             </table>
         </div>
         <!-- Paginación de la tabla -->

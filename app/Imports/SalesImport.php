@@ -29,8 +29,9 @@ class SalesImport implements ToModel, WithHeadingRow
         $product = Product::where('name', $row['product'])->first();
         $company = Company::where('name', $row['company'])->first();
         $award   = Award::where('name', $row['award'])->first();
+        $email   = $user->email;
 
-        if (!$user || !$product || !$company || !$award) {
+        if (!$user || !$product || !$company || !$award || !$email) {
             //Not found register
             return null;
         }
@@ -38,6 +39,7 @@ class SalesImport implements ToModel, WithHeadingRow
         $date = Date::excelToDateTimeObject($row['date'])->format(self::DATE_FORMAT);
         return new Sales([
             'user_id'    => $user->id,
+            'email'      => $email,
             'product_id' => $product->id,
             'company_id' => $company->id,
             'award_id'   => $award->id,

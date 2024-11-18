@@ -4,39 +4,39 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Sales extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'date',
-        'amount',
-        'email',
-        'company_id',
-        'product_id',
         'user_id',
-        'award_id'
+        'email',
+        'product_id',
+        'company_id',
+        'award_id',
+        'amount',
+        'date',
     ];
 
+    // Relación con el modelo User (como agente)
     public function agent()
     {
-        return $this->belongsTo(User::class, 'user_id'); // Relación con el modelo User usando el campo 'user_id'
-    }    
+        return $this->belongsTo(User::class, 'user_id');
+    }
 
     public function product()
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Product::class, 'product_id');
     }
 
     public function company()
     {
-        return $this->belongsTo(Company::class);
+        return $this->belongsTo(Company::class, 'company_id');
     }
 
     public function award()
     {
-        return $this->belongsTo(Award::class);
+        return $this->belongsTo(Award::class, 'award_id');
     }
 }
