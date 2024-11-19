@@ -159,6 +159,7 @@ class SalesController extends Controller
                 $result['data']['award_name'] = $award->name;
             }
 
+
             return view('sales.comparison', compact('results'));
 
         } catch (\Exception $e) {
@@ -233,30 +234,78 @@ class SalesController extends Controller
         return !array_diff(self::EXPECTED_COLUMNS, array_map('strtolower', $header));
     }
 
-    private function compareAndUpdateSales(array $excelRows)
+    private function compareAndUpdateSales($excelData)
     {
         $results = [];
-        foreach ($excelRows as $row) {
-            $saleData = $this->mapRowToSaleData($row);
-            // Verificar que el email coincida con el del usuario en la base de datos
-            if ($saleData['email'] !== User::find($saleData['user_id'])->email) {
-                throw new \Exception("El email de la venta no coincide con el del agente.");
+    
+        foreach ($excelData as $row) {
+            // Buscar los IDs correspondientes basados en los nombres
+            $user = User::where('name', $row[1])->first();
+            $product = Product::where('name', $row[4])->first();
+            $company = Company::where('name', $row[5])->first();
+            $award = Award::where('name', $row[6])->first();
+    
+            // Verificar que todas las entidades existan
+            if (!$user || !$product || !$company || !$award) {
+                $results[] = [
+                    'status' => 'error',
+                    'data' => [
+                        'message' => 'One or more related entities not found.',
+                        'row' => $row,
+                    ],
+                ];
+                continue;
             }
     
-            // Buscar la venta existente
-            $existingSale = $this->findMatchingSale($saleData);
+            // Preparar los datos con IDs para la búsqueda y actualización/creación
+            $mappedRow = [
+                'user_id' => $user->id,
+                'date' => Date::excelToDateTimeObject($row[0])->format('Y-m-d'),
+                'email' => $row[2],
+                'amount' => $row[3],
+                'product_id' => $product->id,
+                'company_id' => $company->id,
+                'award_id' => $award->id,
+            ];
+    
+            // Buscar una venta existente
+            $existingSale = Sales::where('date', $mappedRow['date'])
+                ->where('product_id', $mappedRow['product_id'])
+                ->where('company_id', $mappedRow['company_id'])
+                ->where('user_id', $mappedRow['user_id'])
+                ->first();
+    
+            $status = 'unchanged';
     
             if ($existingSale) {
-                $existingSale->update($saleData);
-                $results[] = ['status' => 'updated', 'data' => $saleData];
+                if ($existingSale->amount != $mappedRow['amount']) {
+                    // Actualizar el monto si cambió
+                    $existingSale->update(['amount' => $mappedRow['amount']]);
+                    $status = 'updated';
+                }
             } else {
-                Sales::create($saleData);
-                $results[] = ['status' => 'new', 'data' => $saleData];
+                // Crear una nueva venta si no existe
+                Sales::create($mappedRow);
+                $status = 'new';
             }
-        }
     
+            // Añadir los datos al resultado
+            $results[] = [
+                'status' => $status,
+                'data' => array_merge($mappedRow, [
+                    'user_name' => $user->name, // Asegurarte de usar solo strings aquí
+                    'product_name' => $product->name,
+                    'company_name' => $company->name,
+                    'award_name' => $award->name,
+                ]),
+            ];
+        }
+        
         return $results;
     }
+    
+    
+
     
 
     private function mapRowToSaleData($row)
