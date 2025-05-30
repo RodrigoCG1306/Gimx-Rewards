@@ -14,21 +14,21 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         User::create([
-            'name'     => 'Cristofer Gómez',
-            'email'    => 'it@guardianinsurancemx.com',
+            'name'     => 'Admin',
+            'email'    => 'admin@email.com',
             'password' => bcrypt('password'),
         ])->assignRole('Admin');
 
         User::create([
-            'name'     => 'Reyna Parra',
-            'email'    => 'health@guardianinsurancemx.com',
+            'name'     => 'Agent',
+            'email'    => 'agent@email.com',
             'password' => bcrypt(''),
         ])->assignRole('Agent');
 
         User::create([
-            'name'     => 'Mónica Covarrubias',
-            'email'    => 'medical@guardianinsurancemx.com',
+            'name'     => 'SubAgent',
+            'email'    => 'Subagent@email.com',
             'password' => bcrypt(''),
-        ])->assignRole('Agent');
+        ])->assignRole('SubAgent');
     }
 }
